@@ -1,0 +1,35 @@
+- name: Initiating Connection with Amazon Web Services
+  hosts: localhost
+  vars_files:
+  - vars/main.yaml
+
+  roles:
+    - create-modules
+    - create-instance
+    - describe-instance
+
+- name: Initiating connection with EC2 instance
+  hosts: '{{ instance_name }}'
+  become: true
+  vars_files:
+  - vars/main.yaml
+
+  roles:
+    - instance-configuration
+
+- hosts: localhost
+  vars_files:
+  - vars/main.yaml
+
+  tasks:
+    
+    - name: Getting instance address
+      shell: sed -n '2s/.*ansible_host=\([0-9.]*\).*/\1/p' {{ repo_hosts }}
+      register: link
+
+    - name: Providing ONOS controller interface link
+      debug:
+        msg:
+        - Access the GUI by clicking here >> http://{{ link.stdout_lines.0 }}:8181/onos/ui/login.html
+        - Username >> onos
+        - Password >> rocks
