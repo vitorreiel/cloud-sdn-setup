@@ -1,0 +1,23 @@
+# [ AWS access configuration variables ]
+aws_access_key:
+aws_secret_key:
+aws_session_token:
+
+# [ Configuration variables for Virtual Machines creation ]
+image: ami-0e86e20dae9224db8
+region: us-east-1
+security_group_name: containernet-group
+key_name: containernet-keypair
+public_ip:
+instance_name: Containernet
+instance_type: t2.large
+
+# [ Repositories ]
+repo_docker: https://get.docker.com
+repo_keypair: ../../utils/credentials/keypair.pem
+repo_hosts: hosts
+repo_vars: vars/main.yaml
+repo_dest: /opt/
+repo_utils: ../../utils/network-components
+repo_topology: ../../utils/network-components/topology/topology.py
+repo_start: ../../opt/network-components/start.sh
