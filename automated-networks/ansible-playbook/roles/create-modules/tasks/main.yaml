@@ -1,0 +1,43 @@
+- name: Creating Security Group
+  amazon.aws.ec2_security_group:
+    name: '{{ security_group_name }}'
+    region: '{{ region }}'
+    description: Allows access to ports necessary for Network Topology
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    aws_session_token: '{{ aws_session_token }}'
+    rules:
+      - proto: tcp
+        ports:
+        - '22'
+        cidr_ip: 0.0.0.0/0
+        rule_desc: Port for SSH access
+      - proto: tcp
+        ports:
+        - '8181'
+        cidr_ip: 0.0.0.0/0
+        rule_desc: ONOS interface port
+      - proto: tcp
+        ports:
+        - '6653'
+        cidr_ip: 0.0.0.0/0
+        rule_desc: One of the ports used by OpenFlow
+      - proto: tcp
+        ports:
+        - '6633'
+        cidr_ip: 0.0.0.0/0
+        rule_desc: One of the ports used by OpenFlow
+
+- name: Creating key pair
+  amazon.aws.ec2_key:
+    name: '{{ key_name }}'
+    region: '{{ region }}'
+    key_type: rsa
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    aws_session_token: '{{ aws_session_token }}'
+  register: ec2_key_result
+
+- name: Saving SSH access key locally
+  copy: content='{{ ec2_key_result.key.private_key }}' dest='{{ repo_keypair }}' mode=0600
+  when: ec2_key_result.changed
