@@ -1,0 +1,39 @@
+- name: Delete EC2 instances and VPC
+  hosts: localhost
+  vars_files:
+  - vars/main.yaml
+
+  tasks:
+    - name: Deleting EC2 instance
+      amazon.aws.ec2_instance:
+        region: '{{ region }}'
+        state: absent
+        aws_access_key: '{{ aws_access_key }}'
+        aws_secret_key: '{{ aws_secret_key }}'
+        aws_session_token: '{{ aws_session_token }}'
+        filters:
+          "tag:Name": '{{ instance_name }}'
+      no_log: true
+
+    - name: Deleting security group
+      amazon.aws.ec2_security_group:
+        region: '{{ region }}'
+        state: absent
+        aws_access_key: '{{ aws_access_key }}'
+        aws_secret_key: '{{ aws_secret_key }}'
+        aws_session_token: '{{ aws_session_token }}'
+        name: '{{ security_group_name }}'
+
+    - name: Deleting key pair
+      amazon.aws.ec2_key:
+        region: '{{ region }}'
+        state: absent
+        name: '{{ key_name }}'
+        aws_access_key: '{{ aws_access_key }}'
+        aws_secret_key: '{{ aws_secret_key }}'
+        aws_session_token: '{{ aws_session_token }}'
+
+    - name: Deleting key pair locally
+      file:
+        path: ../../utils/credentials/keypair.pem
+        state: absent
