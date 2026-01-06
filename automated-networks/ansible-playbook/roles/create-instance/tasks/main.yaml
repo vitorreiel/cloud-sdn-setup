@@ -1,0 +1,17 @@
+- name: Creating EC2 instance
+  amazon.aws.ec2_instance:
+    name: '{{ instance_name }}'
+    instance_type: '{{ instance_type }}'
+    image_id: '{{ image }}'
+    count: 1
+    region: '{{ region }}'
+    key_name: '{{ key_name }}'
+    security_group: '{{ security_group_name }}'
+    aws_access_key: '{{ aws_access_key }}'
+    aws_secret_key: '{{ aws_secret_key }}'
+    aws_session_token: '{{ aws_session_token }}'
+    volumes:
+      - device_name: /dev/sda1
+        ebs:
+          volume_size: 30
+          delete_on_termination: true
