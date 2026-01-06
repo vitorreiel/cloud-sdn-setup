@@ -1,0 +1,7 @@
+[virtual-machines]
+Containernet ansible_host= ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[virtual-machines:vars]
+ansible_connection=ssh
+ansible_user=ubuntu
+ansible_ssh_private_key_file=utils/credentials/keypair.pem
