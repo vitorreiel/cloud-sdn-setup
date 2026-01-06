@@ -1,0 +1,31 @@
+- name: Getting data from emulated network instance
+  amazon.aws.ec2_instance_info:
+    region: "{{ region }}"
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    aws_session_token: "{{ aws_session_token }}"
+    filters:
+      instance.group-name: [ "{{ security_group_name }}" ]
+      key-name: [ "{{ key_name }}" ]
+      "tag:Name": "{{ instance_name }}"
+  register: result
+  retries: 10
+  delay: 30
+  until: '"running" in result.instances.0.state.name'
+  ignore_errors: true
+
+- name: Sending data to hosts configuration file
+  shell: sed -i "2s/[^>]*/{{ instance_name }} ansible_host={{ result.instances.0.public_ip_address }} ansible_ssh_common_args='-o StrictHostKeyChecking=no'/g" {{ repo_hosts }}
+
+- name: Saving IP address in environment variables
+  shell: "sed -i '/public_ip:/{s/.*/public_ip: {{ result.instances.0.public_ip_address }}/}' {{ repo_vars }}"
+
+- name: Saving IP address in topology
+  shell: "sed -i 's/localhost/{{ result.instances.0.public_ip_address }}/g' {{ repo_topology }}"
+
+- name: Updating configurations in hosts file
+  meta: refresh_inventory
+
+- name: Waiting for hosts update
+  shell: sleep 20
+  changed_when: true
