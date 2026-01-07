@@ -182,7 +182,7 @@ EOF
         echo -e "\n\033[1;33m- [ Starting Infrastructure configurations. Please wait! ] \033[0m\n"
         sudo apt update -y > /dev/null 2>&1
         sudo apt install git python3 python3-pip ansible -y > /dev/null 2>&1
-        pip install boto3 ansible-core==2.16.0 Jinja2==3.1.3 urllib3==1.26.5 > /dev/null 2>&1
+        pip install boto3 ansible-core==2.16.0 Jinja2==3.1.3 urllib3==1.26.5 --break-system-packages > /dev/null 2>&1
         ansible-galaxy collection install community.aws --force > /dev/null 2>&1
         awk -v new_value_1="$aws_access_key" 'NR == 2 {print "aws_access_key: " new_value_1} NR != 2' "$destination_file" > tmpfile && mv tmpfile "$destination_file"
         awk -v new_value_2="$aws_secret_key" 'NR == 3 {print "aws_secret_key: " new_value_2} NR != 3' "$destination_file" > tmpfile && mv tmpfile "$destination_file"
