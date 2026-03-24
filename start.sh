@@ -13,24 +13,24 @@ echo -e "\n\033[1;33m- [ Attention: Your AWS Academy account must be started! ] 
 sleep 1
 echo -e '\n\033[1;33m- [ Attention: You must have placed your AWS CLI in the "aws_access" file. ] \033[0m\n'
 sleep 0.5
-echo -e "\n\033[1;36m- [ Type: 1 - To start the automated emulated network creation process. ] \033[0m"
+echo -e "\n\033[1;36m- [ Option: 1 - To start the automated emulated network creation process. ] \033[0m"
 sleep 0.5
-echo -e "\n\033[1;31m- [ Type: 2 - To delete an existing emulated network scenario. ] \033[0m\n"
-echo -e '\n\033[1;35m- [ Please, type the corresponding value: ] \033[0m'
+echo -e "\n\033[1;31m- [ Option: 2 - To delete an existing emulated network scenario. ] \033[0m\n"
+echo -e '\n\033[1;35m- [ Please, option the corresponding value: ] \033[0m'
 read confirmation
 
 if [[ "$confirmation" =~ ^(1|01)$ ]]; then
 
-    echo -e "\n\n\033[1;32m- [ Which tool do you want to use for scenario creation? Type only the number! ] \033[0m\n"
+    echo -e "\n\n\033[1;32m- [ Which tool do you want to use for scenario creation? Option only the number! ] \033[0m\n"
     sleep 0.5
     echo -e "\n\033[1;34m- [ 1 ] : Ansible \033[0m"
     sleep 0.5
     echo -e "\n\033[1;34m- [ 2 ] : Terraform \033[0m\n"
     sleep 0.5
-    echo -e '\n\033[1;35m- [ Please, type the corresponding value: ] \033[0m'
+    echo -e '\n\033[1;35m- [ Please, option the corresponding value: ] \033[0m'
     read iac
 
-    echo -e "\n\n\033[1;32m- [ Type only the number corresponding to the desired topology! ] \033[0m\n"
+    echo -e "\n\n\033[1;32m- [ Option only the number corresponding to the desired topology! ] \033[0m\n"
     sleep 0.5
     echo -e "\n\033[1;34m- [ 1 ] : Single Network Topology \033[0m"
     sleep 0.5
@@ -38,7 +38,7 @@ if [[ "$confirmation" =~ ^(1|01)$ ]]; then
     sleep 0.5
     echo -e "\n\033[1;34m- [ 3 ] : Tree Network Topology \033[0m\n"
     sleep 0.5
-    echo -e '\n\033[1;35m- [ Please, type the corresponding value: ] \033[0m'
+    echo -e '\n\033[1;35m- [ Please, option the corresponding value: ] \033[0m'
     read topology
 
     generate_python_code() {
@@ -222,7 +222,7 @@ elif [[ "$confirmation" =~ ^(2|02)$ ]]; then
     sleep 0.5
     echo -e "\n\033[1;34m- [ 2 ] : Terraform \033[0m\n"
     sleep 0.5
-    echo -e '\n\033[1;35m- [ Please, type the corresponding value: ] \033[0m'
+    echo -e '\n\033[1;35m- [ Please, option the corresponding value: ] \033[0m'
     read destroy
 
     case $destroy in
