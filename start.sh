@@ -71,7 +71,7 @@ def topology(args):
 EOF
 
     if [ "$topology" == "1" ] || [ "$topology" == "01" ]; then
-        echo "    S1 = net.addSwitch('S1')" >> $temp_file
+        echo "    S1 = net.addSwitch('S1', dpid='0000000000000001')" >> $temp_file
         for ((i=1; i<=$num_hosts; i++)); do
             echo "    H$i = net.addDocker('H$i', mac='00:00:00:00:00:$(printf '%02x' $i)', ip='10.0.10.1$i/24', dimage=\"alpine-user:latest\")" >> $temp_file
             echo "    net.addLink(S1, H$i)" >> $temp_file
@@ -80,7 +80,8 @@ EOF
     elif [ "$topology" == "2" ] || [ "$topology" == "02" ]; then
         # Adding switches
         for ((i=1; i<=$num_switches; i++)); do
-            echo "    S$i = net.addSwitch('S$i')" >> $temp_file
+            dpid=$(printf '%016x' $i)
+            echo "    S$i = net.addSwitch('S$i', dpid='$dpid')" >> $temp_file
         done
 
         # Adding hosts and connecting each one to its corresponding switch
@@ -98,14 +99,16 @@ EOF
         # Adding level 1 switches
         echo "    # Level 1: Switches connecting to level 2 switches" >> $temp_file
         for ((i=1; i<=$num_switches_lvl1; i++)); do
-            echo "    S1$i = net.addSwitch('S1$i')" >> $temp_file
+            dpid=$(printf '%016x' $i)
+            echo "    S1$i = net.addSwitch('S1$i', dpid='$dpid')" >> $temp_file
         done
 
         # Adding level 2 switches and connecting them to level 1 switches
         echo "    # Level 2: Switches connected to level 1 switches" >> $temp_file
         for ((i=1; i<=$num_switches_lvl1; i++)); do
             for ((j=1; j<=$num_switches_lvl2; j++)); do
-                echo "    S2${i}_$j = net.addSwitch('S2${i}_$j')" >> $temp_file
+                dpid=$(printf '%016x' $((i * 1000 + j)))
+                echo "    S2${i}_$j = net.addSwitch('S2${i}_$j', dpid='$dpid')" >> $temp_file
                 echo "    net.addLink(S1$i, S2${i}_$j)" >> $temp_file
 
                 # Connecting hosts to level 2 switches
@@ -120,6 +123,11 @@ EOF
     cat <<EOF >> $temp_file
     info("*** Starting network\\n")
     net.start()
+
+    import time
+    info("*** Waiting for controller to install flows...\\n")
+    time.sleep(10)
+
     net.pingAll()
 
     info("*** Running CLI\\n")
