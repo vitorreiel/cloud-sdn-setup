@@ -4,13 +4,13 @@ aws_secret_key:
 aws_session_token:
 
 # [ Configuration variables for Virtual Machines creation ]
-image: ami-0e86e20dae9224db8
+image: ami-0ec10929233384c7f
 region: us-east-1
 security_group_name: containernet-group
 key_name: containernet-keypair
 public_ip:
 instance_name: Containernet
-instance_type: t2.large
+instance_type: t2.large # OR m7i-flex.large (same shape, but available for free subscriptions)
 
 # [ Repositories ]
 repo_docker: https://get.docker.com

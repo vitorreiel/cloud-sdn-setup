@@ -31,5 +31,5 @@
   shell: ./'{{ repo_start }}'
 
 - name: Confirming containers execution
-  shell: sleep 10
+  shell: sleep 20
   changed_when: true

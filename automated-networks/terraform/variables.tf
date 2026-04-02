@@ -24,8 +24,14 @@ variable "region" {
 
 variable "image" {
   type        = string
-  default     = "ami-007855ac798b5175e"
+  default     = "ami-0ec10929233384c7f"
   description = "AMI ID for the instance"
+}
+
+variable "shape" {
+  type        = string
+  default     = "t2.large" # OR m7i-flex.large (same shape, but available for free subscriptions)
+  description = "Instance type for the EC2 instance"
 }
 
 variable "security_group_name" {

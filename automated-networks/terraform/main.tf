@@ -80,7 +80,7 @@ resource "local_file" "private_key" {
 # Creating the EC2 instance
 resource "aws_instance" "web" {
   ami                         = var.image
-  instance_type               = "t2.large"
+  instance_type               = var.shape
   key_name                    = aws_key_pair.main.key_name
   vpc_security_group_ids      = [aws_security_group.main.id]
   associate_public_ip_address = true
@@ -96,7 +96,7 @@ resource "aws_instance" "web" {
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = file("${path.module}/../../utils/credentials/keypair.pem")
+    private_key = tls_private_key.main.private_key_pem
     host        = aws_instance.web.public_ip
   }
 
@@ -119,6 +119,7 @@ resource "aws_instance" "web" {
       "sudo mv network-components ../../opt/",
       "chmod 777 ../../opt/network-components/start.sh",
       "sudo ./../../opt/network-components/start.sh",
+      "sleep 20",
     ]
   }
 }
