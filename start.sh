@@ -185,6 +185,25 @@ EOF
         generate_python_code "$topology" "$num_switches" "$num_hosts"
     fi
 
+    echo -e "\n\033[1;35m- [ How many times do you want to repeat the experiment? ] \033[0m"
+    read repetitions
+
+    # Determine topology kind for CSV filename
+    case $topology in
+        1|01) kind="single" ;;
+        2|02) kind="linear" ;;
+        3|03) kind="tree" ;;
+    esac
+
+    # Create results directory and CSV file with header if it doesn't exist
+    mkdir -p results
+    csv_file="results/${kind}.csv"
+    if [ ! -f "$csv_file" ]; then
+        echo "id,runtime,kind,runtime_destroy" > "$csv_file"
+    fi
+    last_id=$(tail -n +2 "$csv_file" | wc -l)
+
+    # Install dependencies once before the repetition loop
     case $iac in
     1|01)
         echo -e "\n\033[1;33m- [ Starting Infrastructure configurations. Please wait! ] \033[0m\n"
@@ -196,9 +215,6 @@ EOF
         awk -v new_value_2="$aws_secret_key" 'NR == 3 {print "aws_secret_key: " new_value_2} NR != 3' "$destination_file" > tmpfile && mv tmpfile "$destination_file"
         awk -v new_value_3="$aws_session_token" 'NR == 4 {print "aws_session_token: " new_value_3} NR != 4' "$destination_file" > tmpfile && mv tmpfile "$destination_file"
         echo -e "\033[1;32m- [ Dependencies installed Successfully! ] \033[0m\n"
-        ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook.yaml
-        #ip=$(awk '/ansible_host/ {match($0, /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/); print substr($0, RSTART, RLENGTH)}' automated-networks/ansible-playbook/hosts)
-        #ssh -i "$destination_key" ubuntu@"$ip"
     esac
 
     case $iac in
@@ -209,11 +225,52 @@ EOF
         sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl > /dev/null 2>&1
         curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - > /dev/null 2>&1
         echo "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null 2>&1
-        sudo apt-get install terraform -y  > /dev/null 2>&1
+        sudo apt-get install terraform -y > /dev/null 2>&1
         sed -i -e "4s|.*|  default = \"$aws_access_key\"|" -e "10s|.*|  default = \"$aws_secret_key\"|" -e "16s|.*|  default = \"$aws_session_token\"|" "$destination_file_terraform"
         terraform -chdir=automated-networks/terraform init
-        terraform -chdir=automated-networks/terraform apply -auto-approve
     esac
+
+    # Repetition loop: each iteration creates, captures runtime, destroys, captures runtime_destroy
+    for ((rep=1; rep<=repetitions; rep++)); do
+        id=$((last_id + rep))
+        echo -e "\n\033[1;36m- [ Repetition $rep/$repetitions ] \033[0m"
+
+        # --- CREATION ---
+        start_time=$(date +%s)
+
+        case $iac in
+        1|01)
+            ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook.yaml
+        esac
+
+        case $iac in
+        2|02)
+            terraform -chdir=automated-networks/terraform apply -auto-approve
+        esac
+
+        end_time=$(date +%s)
+        runtime=$((end_time - start_time))
+
+        # --- DESTRUCTION ---
+        start_destroy=$(date +%s)
+
+        case $iac in
+        1|01)
+            ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook-destroy.yaml
+        esac
+
+        case $iac in
+        2|02)
+            terraform -chdir=automated-networks/terraform destroy -auto-approve
+        esac
+
+        end_destroy=$(date +%s)
+        runtime_destroy=$((end_destroy - start_destroy))
+
+        # Append result to CSV
+        echo "$id,$runtime,$kind,$runtime_destroy" >> "$csv_file"
+        echo -e "\033[1;32m- [ Rep $rep/$repetitions done | Runtime: ${runtime}s | Destroy: ${runtime_destroy}s | Saved to $csv_file ] \033[0m"
+    done
 
 elif [[ "$confirmation" =~ ^(2|02)$ ]]; then
     echo -e "\n\n\033[1;32m- [ Which tool will be used to destroy the scenario? ] \033[0m\n"

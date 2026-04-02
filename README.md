@@ -10,6 +10,7 @@ Este artefato acompanha o artigo **"Comparative Performance Analysis of IaC Tool
 - [Informações Básicas](#informações-básicas)
 - [Dependências](#dependências)
 - [Preocupações com Segurança](#preocupações-com-segurança)
+- [Permissões IAM Necessárias](#permissões-iam-necessárias)
 - [Instalação](#instalação)
 - [Teste Mínimo](#teste-mínimo)
 - [Experimentos](#experimentos)
@@ -89,6 +90,96 @@ Os selos considerados são: **Disponível (SeloD)**, **Funcional (SeloF)**, **Su
 - Ao utilizar o AWS Academy, as credenciais são temporárias e expiram automaticamente ao fim da sessão do laboratório.
 - A chave SSH gerada pelo Terraform para acesso à instância EC2 é salva localmente em `utils/credentials/keypair.pem` e não é commitada.
 - O security group criado libera as portas 22 (SSH), 8181 (ONOS UI), 6633 e 6653 (OpenFlow).
+
+---
+
+## Permissões IAM Necessárias
+
+As chaves de acesso IAM utilizadas para executar o benchmark devem possuir as seguintes permissões mínimas:
+
+| Serviço | Permissões | Finalidade |
+|---|---|---|
+| **EC2 – Instâncias** | `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:DescribeInstances`, `ec2:DescribeInstanceStatus`, `ec2:CreateTags`, `ec2:DeleteTags` | Criar, consultar e destruir a instância `t2.large` |
+| **EC2 – Volumes** | `ec2:CreateVolume`, `ec2:DeleteVolume`, `ec2:DescribeVolumes` | Gerenciar o volume gp2 de 30 GB |
+| **EC2 – Security Groups** | `ec2:CreateSecurityGroup`, `ec2:DeleteSecurityGroup`, `ec2:DescribeSecurityGroups`, `ec2:AuthorizeSecurityGroupIngress`, `ec2:RevokeSecurityGroupIngress`, `ec2:AuthorizeSecurityGroupEgress`, `ec2:RevokeSecurityGroupEgress` | Criar e configurar o security group com as portas 22, 6633, 6653 e 8181 |
+| **EC2 – Key Pairs** | `ec2:CreateKeyPair`, `ec2:DeleteKeyPair`, `ec2:DescribeKeyPairs`, `ec2:ImportKeyPair` | Gerar e gerenciar o par de chaves SSH para acesso à instância |
+| **EC2 – Rede/VPC** | `ec2:DescribeVpcs`, `ec2:DescribeSubnets`, `ec2:DescribeNetworkInterfaces`, `ec2:DescribeAddresses` | Consultar a VPC padrão e associar IP público |
+| **EC2 – Imagens** | `ec2:DescribeImages` | Localizar a AMI Ubuntu 22.04 |
+
+<details>
+<summary><strong>Política IAM em formato JSON (clique para expandir)</strong></summary>
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EC2InstanceManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances",
+        "ec2:TerminateInstances",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ec2:CreateTags",
+        "ec2:DeleteTags"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2VolumeManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVolume",
+        "ec2:DeleteVolume",
+        "ec2:DescribeVolumes"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2SecurityGroupManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSecurityGroup",
+        "ec2:DeleteSecurityGroup",
+        "ec2:DescribeSecurityGroups",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:RevokeSecurityGroupIngress",
+        "ec2:AuthorizeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupEgress"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2KeyPairManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateKeyPair",
+        "ec2:DeleteKeyPair",
+        "ec2:DescribeKeyPairs",
+        "ec2:ImportKeyPair"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2NetworkReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeImages"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+</details>
+
+> **Nota:** Se estiver utilizando o AWS Academy, as credenciais temporárias do Lab já possuem as permissões necessárias. A política acima é necessária apenas para contas AWS padrão.
 
 ---
 
