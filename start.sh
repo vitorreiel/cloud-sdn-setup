@@ -185,23 +185,26 @@ EOF
         generate_python_code "$topology" "$num_switches" "$num_hosts"
     fi
 
-    echo -e "\n\033[1;35m- [ How many times do you want to repeat the experiment? ] \033[0m"
-    read repetitions
-
-    # Determine topology kind for CSV filename
+    # Determine topology kind and IaC tool name for CSV path
     case $topology in
         1|01) kind="single" ;;
         2|02) kind="linear" ;;
         3|03) kind="tree" ;;
     esac
 
+    case $iac in
+        1|01) iac_name="ansible" ;;
+        2|02) iac_name="terraform" ;;
+    esac
+
     # Create results directory and CSV file with header if it doesn't exist
-    mkdir -p results
-    csv_file="results/${kind}.csv"
+    mkdir -p "results/create/${iac_name}"
+    csv_file="results/create/${iac_name}/${kind}.csv"
     if [ ! -f "$csv_file" ]; then
-        echo "id,runtime,kind,runtime_destroy" > "$csv_file"
+        echo "id,runtime,kind" > "$csv_file"
     fi
     last_id=$(tail -n +2 "$csv_file" | wc -l)
+    id=$((last_id + 1))
 
     # Install dependencies once before the repetition loop
     case $iac in
@@ -230,66 +233,72 @@ EOF
         terraform -chdir=automated-networks/terraform init
     esac
 
-    # Repetition loop: each iteration creates, captures runtime, destroys, captures runtime_destroy
-    for ((rep=1; rep<=repetitions; rep++)); do
-        id=$((last_id + rep))
-        echo -e "\n\033[1;36m- [ Repetition $rep/$repetitions ] \033[0m"
+    # --- CREATION ---
+    start_time=$(date +%s)
 
-        # --- CREATION ---
-        start_time=$(date +%s)
+    case $iac in
+    1|01)
+        ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook.yaml
+    esac
 
-        case $iac in
-        1|01)
-            ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook.yaml
-        esac
+    case $iac in
+    2|02)
+        terraform -chdir=automated-networks/terraform apply -auto-approve
+    esac
 
-        case $iac in
-        2|02)
-            terraform -chdir=automated-networks/terraform apply -auto-approve
-        esac
+    end_time=$(date +%s)
+    runtime=$((end_time - start_time))
 
-        end_time=$(date +%s)
-        runtime=$((end_time - start_time))
+    # Save last run state for destroy reference
+    echo "${kind},${iac_name}" > results/.last_run
 
-        # --- DESTRUCTION ---
-        start_destroy=$(date +%s)
-
-        case $iac in
-        1|01)
-            ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook-destroy.yaml
-        esac
-
-        case $iac in
-        2|02)
-            terraform -chdir=automated-networks/terraform destroy -auto-approve
-        esac
-
-        end_destroy=$(date +%s)
-        runtime_destroy=$((end_destroy - start_destroy))
-
-        # Append result to CSV
-        echo "$id,$runtime,$kind,$runtime_destroy" >> "$csv_file"
-        echo -e "\033[1;32m- [ Rep $rep/$repetitions done | Runtime: ${runtime}s | Destroy: ${runtime_destroy}s | Saved to $csv_file ] \033[0m"
-    done
+    # Append result to CSV
+    echo "$id,$runtime,$kind" >> "$csv_file"
+    echo -e "\033[1;32m- [ Done | Runtime: ${runtime}s | Saved to $csv_file ] \033[0m"
 
 elif [[ "$confirmation" =~ ^(2|02)$ ]]; then
-    echo -e "\n\n\033[1;32m- [ Which tool will be used to destroy the scenario? ] \033[0m\n"
-    sleep 0.5
-    echo -e "\n\033[1;34m- [ 1 ] : Ansible \033[0m"
-    sleep 0.5
-    echo -e "\n\033[1;34m- [ 2 ] : Terraform \033[0m\n"
-    sleep 0.5
-    echo -e '\n\033[1;35m- [ Please, option the corresponding value: ] \033[0m'
-    read destroy
 
-    case $destroy in
-    1|01)
-    esac
-	ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook-destroy.yaml
-    case $destroy in
-    2|02)
+    # Read last run state to determine topology and IaC tool
+    if [ ! -f "results/.last_run" ]; then
+        echo -e "\n\033[1;31m- [ Error: No previous scenario found. Please create a scenario first (option 1). ] \033[0m"
+        exit 1
+    fi
+
+    kind=$(cut -d',' -f1 "results/.last_run")
+    iac_name=$(cut -d',' -f2 "results/.last_run")
+
+    echo -e "\n\033[1;36m- [ Destroying ${kind} topology created with ${iac_name}... ] \033[0m\n"
+
+    # Create results directory and CSV file with header if it doesn't exist
+    mkdir -p "results/destroy/${iac_name}"
+    csv_file="results/destroy/${iac_name}/${kind}.csv"
+    if [ ! -f "$csv_file" ]; then
+        echo "id,runtime,kind" > "$csv_file"
+    fi
+    last_id=$(tail -n +2 "$csv_file" | wc -l)
+    id=$((last_id + 1))
+
+    # --- DESTRUCTION ---
+    start_time=$(date +%s)
+
+    case $iac_name in
+    ansible)
+        ansible-playbook -i automated-networks/ansible-playbook/hosts automated-networks/ansible-playbook/playbook-destroy.yaml
+    ;;
+    terraform)
         terraform -chdir=automated-networks/terraform destroy -auto-approve
+    ;;
     esac
+
+    end_time=$(date +%s)
+    runtime=$((end_time - start_time))
+
+    # Remove last run state
+    rm -f "results/.last_run"
+
+    # Append result to CSV
+    echo "$id,$runtime,$kind" >> "$csv_file"
+    echo -e "\033[1;32m- [ Done | Runtime: ${runtime}s | Saved to $csv_file ] \033[0m"
 else
     echo -e "\n\033[1;33m- [ Sorry, value not found, closing terminal... ] \033[0m"
 fi
