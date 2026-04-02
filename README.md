@@ -320,7 +320,8 @@ Aguarde o processo de destruição.
 
 ## Material de Apoio
 
-Vídeo demonstrativo com o processo de instalação e execução dos cenários: [https://youtu.be/...](https://youtu.be/...)
+Vídeo demonstrativo com o processo de instalação e execução dos cenários:
+[https://youtu.be/z7luSNC4loY](https://youtu.be/z7luSNC4loY)
 
 ---
 
