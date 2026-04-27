@@ -11,6 +11,7 @@ Este artefato acompanha o artigo **"Comparative Performance Analysis of IaC Tool
 - [Dependências](#dependências)
 - [Preocupações com Segurança](#preocupações-com-segurança)
 - [Permissões IAM Necessárias](#permissões-iam-necessárias)
+- [Obtendo Credenciais AWS](#obtendo-credenciais-aws)
 - [Instalação](#instalação)
 - [Teste Mínimo](#teste-mínimo)
 - [Experimentos](#experimentos)
@@ -183,7 +184,62 @@ As chaves de acesso IAM utilizadas para executar o benchmark devem possuir as se
 
 ---
 
+## Obtendo Credenciais AWS
+
+O artefato suporta dois tipos de conta AWS. Siga **apenas uma** das opções abaixo.
+
+---
+
+### Opção A — AWS Academy
+
+> O AWS Academy é um programa educacional oferecido por universidades parceiras da AWS. O acesso é feito por convite institucional — **não é possível criar uma conta de forma autônoma**. O portal é: [https://awsacademy.instructure.com](https://awsacademy.instructure.com). Se você não recebeu um convite por e-mail, utilize a Opção B.
+
+**Passos:**
+
+1. Acesse o convite recebido por e-mail institucional ou faça login em [https://awsacademy.instructure.com](https://awsacademy.instructure.com).
+2. Dentro do curso, acesse o módulo **"Learner Lab"** ou o laboratório indicado.
+3. Clique no botão **"Start Lab"** e aguarde o indicador de status mudar de **vermelho → amarelo → verde** (pode levar alguns minutos).
+4. Após o status ficar **verde**, clique no botão **"AWS Details"** (canto superior direito do painel do Lab).
+5. Na janela que abrir, clique na aba **"AWS CLI"**.
+6. Clique em **"Show"** para revelar as credenciais.
+7. Você verá um bloco de texto com o seguinte formato:
+
+```
+[default]
+aws_access_key_id=ASIA...
+aws_secret_access_key=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+aws_session_token=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+8. Copie **os três valores** — eles serão usados no passo de configuração abaixo.
+
+> **Atenção:** As credenciais do AWS Academy são **temporárias** e expiram quando o Lab é encerrado. Ao reiniciar o Lab, novos valores são gerados e devem ser atualizados no arquivo `aws_access`.
+
+---
+
+### Opção B — Conta AWS padrão (Free Tier)
+
+> Uma conta AWS padrão exige cadastro com **cartão de crédito** para verificação de identidade — isso é um requisito da própria AWS e não gera cobranças se os recursos do Free Tier forem utilizados. **Para criar uma conta:** acesse [https://aws.amazon.com/free](https://aws.amazon.com/free) e clique em **"Create a Free Account"**. A instância `t2.large` usada neste artefato **não está no Free Tier** e pode gerar custos; destrua a instância após os testes (opção 2 do `start.sh`).
+
+**Passos para criar as chaves de acesso (após ter conta criada):**
+
+1. Acesse [https://console.aws.amazon.com](https://console.aws.amazon.com) e faça login.
+2. Acesse a página de credenciais: [https://console.aws.amazon.com/iam/home#/security_credentials](https://console.aws.amazon.com/iam/home#/security_credentials) — ou, no canto superior direito, clique no **nome da sua conta** > **"Security credentials"**.
+3. Na seção **"Access keys"**, clique em **"Create access key"**.
+4. Selecione o caso de uso **"Command Line Interface (CLI)"** e marque a confirmação.
+5. Clique em **"Next"** e depois em **"Create access key"**.
+6. Na tela seguinte, você verá o **Access Key ID** e o **Secret Access Key**. **Copie ambos agora** — o Secret Access Key não pode ser visualizado novamente.
+7. Clique em **"Done"**.
+
+> Para contas padrão **não** é necessário `aws_session_token` — deixe essa linha comentada ou ausente no arquivo `aws_access`.
+
+> **Região AWS:** os scripts utilizam a região **`us-east-1` (US East - N. Virginia)** por padrão. Ao acessar o console AWS, certifique-se de que a região selecionada no canto superior direito é **US East (N. Virginia)**. Caso contrário, os recursos criados podem não aparecer na sua visualização.
+
+---
+
 ## Instalação
+
+> **Requisito de sistema operacional:** os scripts de instalação utilizam comandos exclusivos do Linux (`apt-get`, `apt`). É necessário executar em uma máquina com **Ubuntu 22.04** (ou compatível). Usuários de **Windows** devem usar o [WSL 2](https://learn.microsoft.com/pt-br/windows/wsl/install) com Ubuntu; usuários de **macOS** devem usar uma VM (ex.: VirtualBox ou UTM com Ubuntu 22.04).
 
 **1.** Clone o repositório:
 ```sh
@@ -191,27 +247,31 @@ git clone https://github.com/vitorreiel/cloud-sdn-setup.git
 cd cloud-sdn-setup
 ```
 
-**2.** Obtenha suas credenciais AWS:
-- **AWS Academy:** Inicie o Lab e acesse **AWS Details > AWS CLI > Show**
-- **AWS padrão:** Acesse o IAM e gere um par de chaves de acesso
+**2.** Obtenha suas credenciais AWS conforme a seção [Obtendo Credenciais AWS](#obtendo-credenciais-aws) acima.
 
-**3.** Copie o arquivo `aws_access.example` para o arquivo `aws_access`. Em seguida, adicione suas credenciais:
+**3.** Copie o arquivo de exemplo e preencha com suas credenciais:
 ```sh
+cp aws_access.example aws_access
 nano aws_access
 ```
-O arquivo deve ter o formato:
+
+Apague o conteúdo de exemplo e substitua pelos seus valores:
+
 ```
 aws_access_key_id=SUA_ACCESS_KEY
 aws_secret_access_key=SUA_SECRET_KEY
-aws_session_token=SEU_SESSION_TOKEN  # opcional, necessário apenas para AWS Academy
+aws_session_token=SEU_SESSION_TOKEN # opcional, necessário apenas para AWS Academy
 ```
+
+> **AWS Academy:** preencha os três campos (incluindo `aws_session_token`).  
+> **Conta padrão:** preencha apenas `aws_access_key_id` e `aws_secret_access_key`; remova ou comente a linha do `aws_session_token`.
 
 **4.** Execute o script principal:
 ```sh
 ./start.sh
 ```
 
-> **Nota:** É durante a execução desse script que será feito a instalação automatica das dependências necessárias e ainda, guiará o processo de criação/destruição da infraestrutura via menu interativo.
+> **Nota:** É durante a execução desse script que será feita a instalação automática das dependências necessárias. O script guiará o processo de criação/destruição da infraestrutura via menu interativo.
 
 ---
 
