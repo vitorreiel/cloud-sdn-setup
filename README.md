@@ -260,7 +260,7 @@ Apague o conteúdo de exemplo e substitua pelos seus valores:
 ```
 aws_access_key_id=SUA_ACCESS_KEY
 aws_secret_access_key=SUA_SECRET_KEY
-aws_session_token=SEU_SESSION_TOKEN
+aws_session_token=SEU_SESSION_TOKEN # opcional, necessário apenas para AWS Academy
 ```
 
 > **AWS Academy:** preencha os três campos (incluindo `aws_session_token`).  
