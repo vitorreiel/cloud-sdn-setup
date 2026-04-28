@@ -30,7 +30,7 @@ variable "image" {
 
 variable "shape" {
   type        = string
-  default     = "t2.large" # OR m7i-flex.large (same shape, but available for free subscriptions)
+  default     = "m7i-flex.large" # OR t2.large (same shape, but available for free subscriptions)
   description = "Instance type for the EC2 instance"
 }
 

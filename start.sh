@@ -226,8 +226,9 @@ EOF
             touch "$destination_key"
         fi
         sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl > /dev/null 2>&1
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add - > /dev/null 2>&1
-        echo "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null 2>&1
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null 2>&1
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null 2>&1
+        sudo apt-get update > /dev/null 2>&1
         sudo apt-get install terraform -y > /dev/null 2>&1
         sed -i -e "4s|.*|  default = \"$aws_access_key\"|" -e "10s|.*|  default = \"$aws_secret_key\"|" -e "16s|.*|  default = \"$aws_session_token\"|" "$destination_file_terraform"
         terraform -chdir=automated-networks/terraform init
