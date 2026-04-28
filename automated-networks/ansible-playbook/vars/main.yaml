@@ -10,7 +10,7 @@ security_group_name: containernet-group
 key_name: containernet-keypair
 public_ip:
 instance_name: Containernet
-instance_type: t2.large # OR m7i-flex.large (same shape, but available for free subscriptions)
+instance_type: m7i-flex.large # OR t2.large (same shape, but available for free subscriptions)
 
 # [ Repositories ]
 repo_docker: https://get.docker.com
