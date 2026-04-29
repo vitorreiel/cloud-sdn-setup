@@ -101,12 +101,13 @@ As chaves de acesso IAM utilizadas para executar o benchmark devem possuir as se
 
 | Serviço | Permissões | Finalidade |
 |---|---|---|
-| **EC2 – Instâncias** | `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:DescribeInstances`, `ec2:DescribeInstanceStatus`, `ec2:CreateTags`, `ec2:DeleteTags` | Criar, consultar e destruir a instância `t2.large` |
+| **EC2 – Instâncias** | `ec2:RunInstances`, `ec2:TerminateInstances`, `ec2:DescribeInstances`, `ec2:DescribeInstanceStatus`, `ec2:DescribeInstanceAttribute`, `ec2:CreateTags`, `ec2:DeleteTags`, `ec2:DescribeTags` | Criar, consultar e destruir a instância `t2.large` |
 | **EC2 – Volumes** | `ec2:CreateVolume`, `ec2:DeleteVolume`, `ec2:DescribeVolumes` | Gerenciar o volume gp2 de 30 GB |
 | **EC2 – Security Groups** | `ec2:CreateSecurityGroup`, `ec2:DeleteSecurityGroup`, `ec2:DescribeSecurityGroups`, `ec2:AuthorizeSecurityGroupIngress`, `ec2:RevokeSecurityGroupIngress`, `ec2:AuthorizeSecurityGroupEgress`, `ec2:RevokeSecurityGroupEgress` | Criar e configurar o security group com as portas 22, 6633, 6653 e 8181 |
 | **EC2 – Key Pairs** | `ec2:CreateKeyPair`, `ec2:DeleteKeyPair`, `ec2:DescribeKeyPairs`, `ec2:ImportKeyPair` | Gerar e gerenciar o par de chaves SSH para acesso à instância |
-| **EC2 – Rede/VPC** | `ec2:DescribeVpcs`, `ec2:DescribeSubnets`, `ec2:DescribeNetworkInterfaces`, `ec2:DescribeAddresses` | Consultar a VPC padrão e associar IP público |
+| **EC2 – Rede/VPC** | `ec2:DescribeVpcs`, `ec2:DescribeVpcAttribute`, `ec2:DescribeSubnets`, `ec2:DescribeNetworkInterfaces`, `ec2:DescribeAddresses` | Consultar a VPC padrão e associar IP público |
 | **EC2 – Imagens** | `ec2:DescribeImages` | Localizar a AMI Ubuntu 22.04 |
+| **EC2 – Tipos de instância** | `ec2:DescribeInstanceTypes` | Validar o tipo de instância durante o provisionamento |
 
 <details>
 <summary><strong>Política IAM em formato JSON (clique para expandir)</strong></summary>
@@ -124,7 +125,9 @@ As chaves de acesso IAM utilizadas para executar o benchmark devem possuir as se
         "ec2:DescribeInstances",
         "ec2:DescribeInstanceStatus",
         "ec2:CreateTags",
-        "ec2:DeleteTags"
+        "ec2:DeleteTags",
+        "ec2:DescribeTags",
+        "ec2:DescribeInstanceAttribute"
       ],
       "Resource": "*"
     },
@@ -168,10 +171,12 @@ As chaves de acesso IAM utilizadas para executar o benchmark devem possuir as se
       "Effect": "Allow",
       "Action": [
         "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
         "ec2:DescribeSubnets",
         "ec2:DescribeNetworkInterfaces",
         "ec2:DescribeAddresses",
-        "ec2:DescribeImages"
+        "ec2:DescribeImages",
+        "ec2:DescribeInstanceTypes"
       ],
       "Resource": "*"
     }
@@ -393,6 +398,7 @@ Error: importing EC2 Key Pair (containernet-keypair): ... InvalidKeyPair.Duplica
 Para resolver isso sem precisar acessar o console da AWS manualmente, utilize o script de limpeza:
 
 ```sh
+chmod +x cleanup.sh
 ./cleanup.sh
 ```
 

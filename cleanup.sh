@@ -1,5 +1,15 @@
 #!/bin/bash
 
+if ! command -v aws &> /dev/null; then
+    echo -e "\n\033[1;33m- [ AWS CLI not found. Installing... ] \033[0m"
+    sudo apt-get install -y curl unzip > /dev/null 2>&1
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip > /dev/null 2>&1
+    unzip -q /tmp/awscliv2.zip -d /tmp > /dev/null 2>&1
+    sudo /tmp/aws/install > /dev/null 2>&1
+    rm -rf /tmp/awscliv2.zip /tmp/aws
+    echo -e "\033[1;32m- [ AWS CLI installed. ] \033[0m"
+fi
+
 AWS_REGION="us-east-1"
 INSTANCE_NAME="Containernet"
 SG_NAME="containernet-group"
@@ -29,7 +39,7 @@ echo -e "\n\033[1;36m- [ Step 1/4: Terminating EC2 instance... ] \033[0m"
 INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${INSTANCE_NAME}" "Name=instance-state-name,Values=running,stopped,pending" \
     --query 'Reservations[0].Instances[0].InstanceId' \
-    --output text 2>/dev/null)
+    --output text)
 
 if [ "$INSTANCE_ID" != "None" ] && [ -n "$INSTANCE_ID" ]; then
     aws ec2 terminate-instances --instance-ids "$INSTANCE_ID" > /dev/null
@@ -44,11 +54,21 @@ echo -e "\n\033[1;36m- [ Step 2/4: Deleting security group... ] \033[0m"
 SG_ID=$(aws ec2 describe-security-groups \
     --filters "Name=group-name,Values=${SG_NAME}" \
     --query 'SecurityGroups[0].GroupId' \
-    --output text 2>/dev/null)
+    --output text)
 
 if [ "$SG_ID" != "None" ] && [ -n "$SG_ID" ]; then
-    aws ec2 delete-security-group --group-id "$SG_ID" 2>/dev/null
-    echo -e "  \033[1;32mSecurity group $SG_ID deleted. \033[0m"
+    # Retry up to 5 times — ENIs may still be detaching after instance termination
+    for attempt in $(seq 1 10); do
+        if aws ec2 delete-security-group --group-id "$SG_ID" 2>/dev/null; then
+            echo -e "  \033[1;32mSecurity group $SG_ID deleted. \033[0m"
+            break
+        fi
+        echo -e "  Waiting for network interfaces to detach (attempt $attempt/10)..."
+        sleep 15
+        if [ "$attempt" -eq 10 ]; then
+            echo -e "  \033[1;31mFailed to delete security group $SG_ID after 10 attempts. Delete it manually in the AWS console. \033[0m"
+        fi
+    done
 else
     echo -e "  Security group not found, skipping."
 fi
@@ -57,11 +77,14 @@ echo -e "\n\033[1;36m- [ Step 3/4: Deleting key pair... ] \033[0m"
 KEY_EXISTS=$(aws ec2 describe-key-pairs \
     --key-names "$KEY_NAME" \
     --query 'KeyPairs[0].KeyName' \
-    --output text 2>/dev/null)
+    --output text)
 
 if [ "$KEY_EXISTS" == "$KEY_NAME" ]; then
-    aws ec2 delete-key-pair --key-name "$KEY_NAME"
-    echo -e "  \033[1;32mKey pair deleted. \033[0m"
+    if aws ec2 delete-key-pair --key-name "$KEY_NAME"; then
+        echo -e "  \033[1;32mKey pair deleted. \033[0m"
+    else
+        echo -e "  \033[1;31mFailed to delete key pair. Delete it manually in the AWS console. \033[0m"
+    fi
 else
     echo -e "  Key pair not found, skipping."
 fi
