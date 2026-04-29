@@ -15,6 +15,7 @@ Este artefato acompanha o artigo **"Comparative Performance Analysis of IaC Tool
 - [Instalação](#instalação)
 - [Teste Mínimo](#teste-mínimo)
 - [Experimentos](#experimentos)
+- [Solução de Problemas](#solução-de-problemas)
 - [Material de Apoio](#material-de-apoio)
 - [Dataset e Análise](#dataset-e-análise)
 - [LICENSE](#license)
@@ -375,6 +376,35 @@ Confirme a opção 2 e a ferramenta IaC de sua preferência para destruir os cen
 ![alt text](figures/option-2.png)
 
 Aguarde o processo de destruição.
+
+---
+
+## Solução de Problemas
+
+### Recursos órfãos na AWS (erro de duplicata)
+
+Se uma execução do `start.sh` falhar no meio do processo (por exemplo, durante o provisionamento da instância EC2), recursos como o security group e o key pair podem ter sido criados na AWS mas não registrados no estado do Terraform. Ao tentar executar novamente, você verá erros como:
+
+```
+Error: creating Security Group (containernet-group): ... InvalidGroup.Duplicate: The security group already exists
+Error: importing EC2 Key Pair (containernet-keypair): ... InvalidKeyPair.Duplicate: The keypair already exists
+```
+
+Para resolver isso sem precisar acessar o console da AWS manualmente, utilize o script de limpeza:
+
+```sh
+./cleanup.sh
+```
+
+O script irá:
+1. Encerrar a instância EC2 `Containernet` (se existir) e aguardar sua remoção completa
+2. Deletar o security group `containernet-group`
+3. Deletar o key pair `containernet-keypair`
+4. Limpar os arquivos locais (`keypair.pem` e o estado do Terraform)
+
+> **Atenção:** O `cleanup.sh` lê as credenciais do arquivo `aws_access`. Certifique-se de que elas estão atualizadas antes de executar.
+
+Após a limpeza, execute `./start.sh` normalmente para recriar a infraestrutura do zero.
 
 ---
 
