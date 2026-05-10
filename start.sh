@@ -185,6 +185,25 @@ EOF
         generate_python_code "$topology" "$num_switches" "$num_hosts"
     fi
 
+    if command -v aws &> /dev/null; then
+        export AWS_PAGER=""
+        export AWS_ACCESS_KEY_ID="$(echo "$aws_access_key" | tr -d ' ')"
+        export AWS_SECRET_ACCESS_KEY="$(echo "$aws_secret_key" | tr -d ' ')"
+        _token="$(echo "$aws_session_token" | tr -d ' ')"
+        [ -n "$_token" ] && export AWS_SESSION_TOKEN="$_token"
+        export AWS_DEFAULT_REGION="us-east-1"
+
+        EXISTING=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=Containernet" "Name=instance-state-name,Values=running,stopped,pending" \
+            --query 'Reservations[0].Instances[0].InstanceId' \
+            --output text 2>/dev/null)
+
+        if [ "$EXISTING" != "None" ] && [ -n "$EXISTING" ]; then
+            echo -e "\n\033[1;33m- [ Existing Containernet infrastructure detected. Running cleanup before proceeding... ] \033[0m\n"
+            bash cleanup.sh
+        fi
+    fi
+
     # Determine topology kind and IaC tool name for CSV path
     case $topology in
         1|01) kind="single" ;;
@@ -226,7 +245,7 @@ EOF
             touch "$destination_key"
         fi
         sudo apt-get update && sudo apt-get install -y gnupg software-properties-common curl > /dev/null 2>&1
-        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null 2>&1
+        curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --yes --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null 2>&1
         echo "deb [arch=amd64 signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list > /dev/null 2>&1
         sudo apt-get update > /dev/null 2>&1
         sudo apt-get install terraform -y > /dev/null 2>&1

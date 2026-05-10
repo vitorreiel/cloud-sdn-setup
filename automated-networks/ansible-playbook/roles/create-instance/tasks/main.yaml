@@ -9,7 +9,7 @@
     security_group: '{{ security_group_name }}'
     aws_access_key: '{{ aws_access_key }}'
     aws_secret_key: '{{ aws_secret_key }}'
-    aws_session_token: '{{ aws_session_token }}'
+    aws_session_token: '{{ aws_session_token | default(omit) }}'
     volumes:
       - device_name: /dev/sda1
         ebs:

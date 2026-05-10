@@ -10,6 +10,8 @@ if ! command -v aws &> /dev/null; then
     echo -e "\033[1;32m- [ AWS CLI installed. ] \033[0m"
 fi
 
+export AWS_PAGER=""
+
 AWS_REGION="us-east-1"
 INSTANCE_NAME="Containernet"
 SG_NAME="containernet-group"
@@ -23,16 +25,12 @@ aws_session_token=$(awk -F= '/aws_session_token/ && !/^#/ {print $2}' aws_access
 
 export AWS_ACCESS_KEY_ID="$aws_access_key"
 export AWS_SECRET_ACCESS_KEY="$aws_secret_key"
-export AWS_SESSION_TOKEN="$aws_session_token"
+[ -n "$aws_session_token" ] && export AWS_SESSION_TOKEN="$aws_session_token"
 export AWS_DEFAULT_REGION="$AWS_REGION"
 
-echo -e "\n\033[1;33m- [ WARNING: This will delete all containernet resources from AWS! ] \033[0m"
-echo -e "\033[1;35m- [ Are you sure? Type 'yes' to continue: ] \033[0m"
-read confirm
-
-if [ "$confirm" != "yes" ]; then
-    echo -e "\n\033[1;33m- [ Cancelled. ] \033[0m"
-    exit 0
+if ! aws sts get-caller-identity > /dev/null 2>&1; then
+    echo -e "\n\033[1;31m- [ Error: Invalid or expired AWS credentials. Update the aws_access file and try again. ] \033[0m\n"
+    exit 1
 fi
 
 echo -e "\n\033[1;36m- [ Step 1/4: Terminating EC2 instance... ] \033[0m"
@@ -59,7 +57,7 @@ SG_ID=$(aws ec2 describe-security-groups \
 if [ "$SG_ID" != "None" ] && [ -n "$SG_ID" ]; then
     # Retry up to 5 times — ENIs may still be detaching after instance termination
     for attempt in $(seq 1 10); do
-        if aws ec2 delete-security-group --group-id "$SG_ID" 2>/dev/null; then
+        if aws ec2 delete-security-group --group-id "$SG_ID" > /dev/null 2>&1; then
             echo -e "  \033[1;32mSecurity group $SG_ID deleted. \033[0m"
             break
         fi
@@ -77,7 +75,7 @@ echo -e "\n\033[1;36m- [ Step 3/4: Deleting key pair... ] \033[0m"
 KEY_EXISTS=$(aws ec2 describe-key-pairs \
     --key-names "$KEY_NAME" \
     --query 'KeyPairs[0].KeyName' \
-    --output text)
+    --output text 2>/dev/null)
 
 if [ "$KEY_EXISTS" == "$KEY_NAME" ]; then
     if aws ec2 delete-key-pair --key-name "$KEY_NAME"; then
