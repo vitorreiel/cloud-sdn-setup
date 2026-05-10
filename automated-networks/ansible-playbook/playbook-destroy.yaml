@@ -10,7 +10,7 @@
         state: absent
         aws_access_key: '{{ aws_access_key }}'
         aws_secret_key: '{{ aws_secret_key }}'
-        aws_session_token: '{{ aws_session_token }}'
+        aws_session_token: '{{ aws_session_token | default(omit) }}'
         filters:
           "tag:Name": '{{ instance_name }}'
       no_log: true
@@ -21,7 +21,7 @@
         state: absent
         aws_access_key: '{{ aws_access_key }}'
         aws_secret_key: '{{ aws_secret_key }}'
-        aws_session_token: '{{ aws_session_token }}'
+        aws_session_token: '{{ aws_session_token | default(omit) }}'
         name: '{{ security_group_name }}'
 
     - name: Deleting key pair
@@ -31,7 +31,7 @@
         name: '{{ key_name }}'
         aws_access_key: '{{ aws_access_key }}'
         aws_secret_key: '{{ aws_secret_key }}'
-        aws_session_token: '{{ aws_session_token }}'
+        aws_session_token: '{{ aws_session_token | default(omit) }}'
 
     - name: Deleting key pair locally
       file:

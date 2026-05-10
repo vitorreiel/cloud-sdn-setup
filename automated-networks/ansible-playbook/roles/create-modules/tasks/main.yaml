@@ -5,7 +5,7 @@
     description: Allows access to ports necessary for Network Topology
     aws_access_key: '{{ aws_access_key }}'
     aws_secret_key: '{{ aws_secret_key }}'
-    aws_session_token: '{{ aws_session_token }}'
+    aws_session_token: '{{ aws_session_token | default(omit) }}'
     rules:
       - proto: tcp
         ports:
@@ -35,7 +35,7 @@
     key_type: rsa
     aws_access_key: '{{ aws_access_key }}'
     aws_secret_key: '{{ aws_secret_key }}'
-    aws_session_token: '{{ aws_session_token }}'
+    aws_session_token: '{{ aws_session_token | default(omit) }}'
   register: ec2_key_result
 
 - name: Saving SSH access key locally
